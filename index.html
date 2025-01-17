@@ -3,173 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
   <title>Motion Detector</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background-color: #f0f0f0;
+      margin: 0;
     }
-    #video {
-      display: none;
-    }
-    canvas {
-      display: none;
+    video {
+      display: block;
+      width: 100%;
+      max-width: 500px;
     }
     table {
-      border-collapse: collapse;
       margin-top: 20px;
+      border-collapse: collapse;
       width: 80%;
     }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
     th, td {
+      border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
     th {
-      background-color: #f8f8f8;
+      background-color: #f4f4f4;
     }
   </style>
 </head>
 <body>
   <h1>Motion Detector</h1>
   <video id="video" autoplay></video>
-  <canvas id="canvas"></canvas>
-  <table id="logTable">
+  <table>
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Duration (seconds)</th>
+        <th>Data</th>
+        <th>Tempo de Movimento</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="logTable"></tbody>
   </table>
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const logTable = document.getElementById('logTable').querySelector('tbody');
 
+  <script>
     let motionDetected = false;
-    let startTime = null;
-    let intervalId;
-    let hourlyStartTime = Date.now();
+    let motionStartTime = null;
+    let totalMotionTime = 0;
     let hourlyMotionTime = 0;
 
+    // Initialize the camera
     async function initializeCamera() {
+      const video = document.getElementById('video');
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = stream;
-        sendStartupMessage();
+        startMotionDetection();
+        sendNotification('A aplicação foi iniciada.', 'Acompanhe os movimentos registrados.');
       } catch (error) {
-        console.error("Error accessing camera: ", error);
+        console.error('Erro ao acessar a câmera:', error);
       }
     }
 
-    function detectMotion() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = imageData.data;
-      let motion = 0;
+    // Detect motion
+    function startMotionDetection() {
+      const video = document.getElementById('video');
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
 
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        const avg = (r + g + b) / 3;
+      setInterval(() => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        if (avg > 128) motion++;
-      }
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = frame.data;
+        let motionPixels = 0;
 
-      return motion > 5000; // Threshold for detecting motion.
-    }
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
 
-    function startMotionTimer() {
-      if (!motionDetected) {
-        motionDetected = true;
-        startTime = Date.now();
-      }
-    }
-
-    function stopMotionTimer() {
-      if (motionDetected) {
-        motionDetected = false;
-        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-        logMotion(duration);
-        hourlyMotionTime += parseFloat(duration);
-      }
-    }
-
-    function logMotion(duration) {
-      const row = document.createElement('tr');
-      const dateCell = document.createElement('td');
-      const durationCell = document.createElement('td');
-      const date = new Date().toLocaleString();
-
-      dateCell.textContent = date;
-      durationCell.textContent = duration;
-      row.appendChild(dateCell);
-      row.appendChild(durationCell);
-      logTable.appendChild(row);
-    }
-
-    function checkEfficiency() {
-      const elapsedTime = (Date.now() - hourlyStartTime) / (60 * 60 * 1000); // in hours
-
-      if (elapsedTime >= 1) {
-        const efficiency = (hourlyMotionTime / 3600) * 100; // convert to percentage
-
-        if (efficiency < 55) {
-          sendLowEfficiencyAlert();
+          const brightness = (r + g + b) / 3;
+          if (brightness > 240) motionPixels++;
         }
 
-        // Reset hourly tracking
-        hourlyStartTime = Date.now();
-        hourlyMotionTime = 0;
-      }
-    }
-
-    function sendStartupMessage() {
-      const message = "A aplicação foi iniciada.";
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=5549988971962&text=${encodeURIComponent(message)}`;
-
-      window.open(whatsappUrl, '_blank');
-    }
-
-    function sendLowEfficiencyAlert() {
-      const message = "eficiência baixa";
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=5549988971962&text=${encodeURIComponent(message)}`;
-
-      window.open(whatsappUrl, '_blank');
-    }
-
-    video.addEventListener('play', () => {
-      intervalId = setInterval(() => {
-        const motion = detectMotion();
-
-        if (motion) {
-          startMotionTimer();
+        if (motionPixels > 10000) { // Threshold for detecting motion
+          if (!motionDetected) {
+            motionDetected = true;
+            motionStartTime = new Date();
+          }
         } else {
-          stopMotionTimer();
+          if (motionDetected) {
+            motionDetected = false;
+            const motionEndTime = new Date();
+            const duration = (motionEndTime - motionStartTime) / 1000; // In seconds
+
+            totalMotionTime += duration;
+            hourlyMotionTime += duration;
+            logMotion(motionStartTime, duration);
+          }
         }
+      }, 500);
 
-        checkEfficiency();
-      }, 1000);
-    });
+      setInterval(() => {
+        if (hourlyMotionTime < 1980) { // 55% of an hour (60 minutes = 3600 seconds)
+          sendNotification('Eficiência baixa', 'Houve pouca atividade na última hora.');
+        }
+        hourlyMotionTime = 0; // Reset hourly counter
+      }, 3600000); // Every hour
+    }
 
-    video.addEventListener('pause', () => {
-      clearInterval(intervalId);
-    });
+    // Log motion data in the table
+    function logMotion(startTime, duration) {
+      const table = document.getElementById('logTable');
+      const row = table.insertRow();
+
+      const dateCell = row.insertCell(0);
+      dateCell.textContent = startTime.toLocaleString();
+
+      const durationCell = row.insertCell(1);
+      durationCell.textContent = `${duration.toFixed(2)} segundos`;
+    }
+
+    // Push Notifications
+    function sendNotification(title, body) {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('service-worker.js').then(registration => {
+          registration.showNotification(title, { body });
+        });
+      } else {
+        console.warn('Notificações push não são suportadas neste dispositivo.');
+      }
+    }
 
     initializeCamera();
   </script>
