@@ -52,8 +52,10 @@
   <script>
     let motionDetected = false;
     let motionStartTime = null;
+    let lastMotionEndTime = null;
     let totalMotionTime = 0;
     let hourlyMotionTime = 0;
+    const NO_MOTION_THRESHOLD = 20000; // 20 seconds in milliseconds
 
     // Initialize the camera
     async function initializeCamera() {
@@ -96,17 +98,23 @@
         if (motionPixels > 10000) { // Threshold for detecting motion
           if (!motionDetected) {
             motionDetected = true;
-            motionStartTime = new Date();
+            if (!lastMotionEndTime || new Date() - lastMotionEndTime > NO_MOTION_THRESHOLD) {
+              motionStartTime = new Date();
+            }
           }
         } else {
           if (motionDetected) {
             motionDetected = false;
             const motionEndTime = new Date();
-            const duration = (motionEndTime - motionStartTime) / 1000; // In seconds
 
-            totalMotionTime += duration;
-            hourlyMotionTime += duration;
-            logMotion(motionStartTime, duration);
+            if (motionEndTime - motionStartTime > NO_MOTION_THRESHOLD) {
+              const duration = (motionEndTime - motionStartTime) / 1000; // In seconds
+
+              totalMotionTime += duration;
+              hourlyMotionTime += duration;
+              logMotion(motionStartTime, duration);
+              lastMotionEndTime = motionEndTime;
+            }
           }
         }
       }, 500);
