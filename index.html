@@ -85,6 +85,10 @@
     </div>
 
     <script>
+        const SUPABASE_URL = "https://vfivrbyobztxbjhvfatb.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         document.getElementById('dataForm').addEventListener('input', function() {
             const etiqueta = parseFloat(document.getElementById('etiqueta').value) || 0;
             const maquina = parseFloat(document.getElementById('maquina').value) || 0;
@@ -105,8 +109,9 @@
             };
 
             try {
-                // Placeholder for saving to Supabase or any API
-                console.log('Data to save:', data);
+                const { error } = await supabase.from('data_entries').insert([data]);
+                if (error) throw error;
+
                 alert('Dados salvos com sucesso!');
                 document.getElementById('dataForm').reset();
                 document.getElementById('percentual').value = '';
@@ -116,5 +121,7 @@
             }
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </body>
 </html>
