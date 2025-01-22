@@ -5,67 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Produção</title>
     <link rel="stylesheet" href="styles.css">
-<style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: #f9f9f9;
-}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+        }
 
-h1 {
-    color: #333;
-}
+        h1 {
+            color: #333;
+        }
 
-form {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-}
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
 
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
 
-input, select, button {
-    width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-}
+        input, select, button {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
 
-button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
 
-button:hover {
-    background-color: #0056b3;
-}
-
-</style>
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <h1>Registro de Produção</h1>
     <form id="production-form">
         <label for="op">OP (xxx.xxx/xx-xx):</label>
-        <input type="text" id="op" name="op" pattern="\\d{3}\\.\\d{3}/\\d{2}-\\d{2}" required>
+        <input type="text" id="op" name="op" maxlength="14" required>
 
         <label for="carimbadeira">Carimbadeira:</label>
         <select id="carimbadeira" name="carimbadeira" required>
@@ -86,47 +85,66 @@ button:hover {
         <button type="submit">Salvar</button>
     </form>
 
-    <script src="script.js"></script>
-<script>
-// Configure o cliente do Supabase
-const SUPABASE_URL = 'https://vfivrbyobztxbjhvfatb.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.23.0/dist/umd/supabase.min.js"></script>
 
-// Manipulação do formulário
-const form = document.getElementById('production-form');
-const quantidadeEtiquetaInput = document.getElementById('quantidade-etiqueta');
-const quantidadeMaquinaInput = document.getElementById('quantidade-maquina');
+    <script>
+        // Configure o cliente do Supabase
+        const SUPABASE_URL = 'https://vfivrbyobztxbjhvfatb.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Salva os dados no Supabase
-form.addEventListener('submit', async (event) => {
-    event.preventDefault();
+        // Manipulação do formulário
+        const form = document.getElementById('production-form');
+        const quantidadeEtiquetaInput = document.getElementById('quantidade-etiqueta');
+        const quantidadeMaquinaInput = document.getElementById('quantidade-maquina');
 
-    const op = document.getElementById('op').value;
-    const carimbadeira = document.getElementById('carimbadeira').value;
-    const quantidadeEtiqueta = parseInt(quantidadeEtiquetaInput.value) || 0;
-    const quantidadeMaquina = parseInt(quantidadeMaquinaInput.value) || 0;
-    const percentualAcerto = quantidadeMaquina > 0 
-        ? ((quantidadeEtiqueta / quantidadeMaquina) * 100).toFixed(2) + '%' 
-        : '';
-    const data = new Date().toISOString();
+        // Salva os dados no Supabase
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-    try {
-        const { data: insertData, error } = await supabase
-            .from('producao')
-            .insert([{ op, carimbadeira, quantidadeEtiqueta, quantidadeMaquina, percentualAcerto, data }]);
+            const op = document.getElementById('op').value;
+            const carimbadeira = document.getElementById('carimbadeira').value;
+            const quantidadeEtiqueta = parseInt(quantidadeEtiquetaInput.value) || 0;
+            const quantidadeMaquina = parseInt(quantidadeMaquinaInput.value) || 0;
+            const percentualAcerto = quantidadeMaquina > 0 
+                ? ((quantidadeEtiqueta / quantidadeMaquina) * 100).toFixed(2) + '%' 
+                : '';
+            const data = new Date().toISOString();
 
-        if (error) {
-            throw error;
-        }
+            try {
+                const { data: insertData, error } = await supabase
+                    .from('producao')
+                    .insert([{ op, carimbadeira, quantidadeEtiqueta, quantidadeMaquina, percentualAcerto, data }]);
 
-        alert('Dados salvos com sucesso!');
-        form.reset();
-    } catch (error) {
-        console.error('Erro ao salvar os dados:', error);
-        alert('Ocorreu um erro ao salvar os dados. Tente novamente.');
-    }
-});
-</script>
+                if (error) {
+                    throw error;
+                }
+
+                alert('Dados salvos com sucesso!');
+                form.reset();
+            } catch (error) {
+                console.error('Erro ao salvar os dados:', error);
+                alert('Ocorreu um erro ao salvar os dados. Tente novamente.');
+            }
+        });
+
+        // Formatar o campo OP enquanto o usuário digita
+        const opInput = document.getElementById('op');
+
+        opInput.addEventListener('input', function() {
+            let value = opInput.value.replace(/\D/g, ''); // Remove tudo que não é número
+            if (value.length > 3) {
+                value = value.slice(0, 3) + '.' + value.slice(3);
+            }
+            if (value.length > 7) {
+                value = value.slice(0, 7) + '/' + value.slice(7);
+            }
+            if (value.length > 10) {
+                value = value.slice(0, 10) + '-' + value.slice(10, 14);
+            }
+            opInput.value = value;
+        });
+    </script>
 </body>
 </html>
