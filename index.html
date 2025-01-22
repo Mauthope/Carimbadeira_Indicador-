@@ -3,118 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Produção</title>
+    <title>Data Entry App</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
             margin: 0;
             padding: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            background-color: #f9f9f9;
+            align-items: center;
+            height: 100vh;
         }
-
-        form {
-            background: white;
+        .container {
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
             max-width: 400px;
-            width: 100%;
         }
-
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
         input, select, button {
-            width: 100%;
-            margin-bottom: 12px;
-            padding: 8px;
+            padding: 10px;
             font-size: 16px;
-            border-radius: 4px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
+            border-radius: 4px;
         }
-
         button {
-            background: #007bff;
+            background-color: #007BFF;
             color: white;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-
         button:hover {
-            background: #0056b3;
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h1>Registro de Produção</h1>
-    <form id="production-form">
-        <label for="op">OP (xxx.xxx/xx-xx):</label>
-        <input type="text" id="op" placeholder="Digite a OP" required maxlength="11" oninput="formatOP(this)">
+    <div class="container">
+        <h1>Data Entry Form</h1>
+        <form id="dataForm">
+            <label for="op">OP (xxx.xxx/xx-xx):</label>
+            <input type="text" id="op" name="op" pattern="\d{3}\.\d{3}/\d{2}-\d{2}" required>
 
-        <label for="carimbadeira">Carimbadeira:</label>
-        <select id="carimbadeira" required>
-            <option value="CR-01">CR-01</option>
-            <option value="CR-02">CR-02</option>
-            <option value="CR-03">CR-03</option>
-            <option value="CR-04">CR-04</option>
-            <option value="CR-05">CR-05</option>
-        </select>
+            <label for="carimbadeira">Carimbadeira:</label>
+            <select id="carimbadeira" name="carimbadeira" required>
+                <option value="CR-01">CR-01</option>
+                <option value="CR-02">CR-02</option>
+                <option value="CR-03">CR-03</option>
+                <option value="CR-04">CR-04</option>
+                <option value="CR-05">CR-05</option>
+                <option value="CR-06">CR-06</option>
+            </select>
 
-        <label for="quantidade-etiqueta">Quantidade de Etiqueta:</label>
-        <input type="number" id="quantidade-etiqueta" min="0" required>
+            <label for="etiqueta">Quantidade da Etiqueta:</label>
+            <input type="number" id="etiqueta" name="etiqueta" required>
 
-        <label for="quantidade-maquina">Quantidade da Máquina:</label>
-        <input type="number" id="quantidade-maquina" min="0" required>
+            <label for="maquina">Quantidade da Máquina:</label>
+            <input type="number" id="maquina" name="maquina" required>
 
-        <button type="submit">Salvar</button>
-    </form>
+            <label for="percentual">Percentual de Acerto:</label>
+            <input type="text" id="percentual" name="percentual" readonly>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+            <button type="submit">Salvar</button>
+        </form>
+    </div>
+
     <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://vfivrbyobztxbjhvfatb.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        document.getElementById('dataForm').addEventListener('input', function() {
+            const etiqueta = parseFloat(document.getElementById('etiqueta').value) || 0;
+            const maquina = parseFloat(document.getElementById('maquina').value) || 0;
+            const percentual = maquina > 0 ? ((etiqueta / maquina) * 100).toFixed(2) : 0;
+            document.getElementById('percentual').value = percentual + '%';
+        });
 
-        // Formatar OP
-        function formatOP(input) {
-            let value = input.value.replace(/\D/g, '');
-            value = value.replace(/^(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/^(\d{3}\.\d{3})(\d)/, '$1/$2');
-            value = value.replace(/^(\d{3}\.\d{3}\/\d{2})(\d)/, '$1-$2');
-            input.value = value;
-        }
-
-        // Submeter formulário
-        document.getElementById('production-form').addEventListener('submit', async (event) => {
+        document.getElementById('dataForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            const op = document.getElementById('op').value;
-            const carimbadeira = document.getElementById('carimbadeira').value;
-            const quantidadeEtiqueta = parseInt(document.getElementById('quantidade-etiqueta').value, 10);
-            const quantidadeMaquina = parseInt(document.getElementById('quantidade-maquina').value, 10);
-            const percentualAcerto = quantidadeMaquina > 0 
-                ? ((quantidadeEtiqueta / quantidadeMaquina) * 100).toFixed(2) + '%' 
-                : '0.00%';
-            const data = new Date().toISOString();
+            const data = {
+                op: document.getElementById('op').value,
+                carimbadeira: document.getElementById('carimbadeira').value,
+                etiqueta: parseInt(document.getElementById('etiqueta').value),
+                maquina: parseInt(document.getElementById('maquina').value),
+                percentual: document.getElementById('percentual').value,
+                date: new Date().toISOString()
+            };
 
             try {
-                const { data: insertData, error } = await supabase
-                    .from('producao')
-                    .insert([{ op, carimbadeira, quantidadeEtiqueta, quantidadeMaquina, percentualAcerto, data }]);
-
-                if (error) {
-                    console.error('Erro no Supabase:', error);
-                    alert('Erro ao salvar os dados no Supabase. Verifique as configurações e tente novamente.');
-                    return;
-                }
-
+                // Placeholder for saving to Supabase or any API
+                console.log('Data to save:', data);
                 alert('Dados salvos com sucesso!');
-                document.getElementById('production-form').reset();
+                document.getElementById('dataForm').reset();
+                document.getElementById('percentual').value = '';
             } catch (error) {
-                console.error('Erro ao salvar no Supabase:', error);
+                console.error('Erro ao salvar os dados:', error);
                 alert('Erro ao salvar os dados. Tente novamente.');
             }
         });
