@@ -1,118 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contrast Filter App</title>
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
-    video, canvas {
-      margin-top: 10px;
-      max-width: 100%;
-    }
-
-    .controls {
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário com Supabase</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Contrast Filter Application</h1>
-  <video id="video" autoplay muted playsinline></video>
-  <canvas id="canvas"></canvas>
+    <h1>Registro de Produção</h1>
+    <form id="production-form">
+        <label for="op">OP (xxx.xxx/xx-xx):</label>
+        <input type="text" id="op" name="op" pattern="\d{3}\.\d{3}/\d{2}-\d{2}" required>
 
-  <div class="controls">
-    <button id="select-area">Select Area</button>
-    <p id="result"></p>
-  </div>
+        <label for="carimbadeira">Carimbadeira:</label>
+        <select id="carimbadeira" name="carimbadeira" required>
+            <option value="CR-01">CR-01</option>
+            <option value="CR-02">CR-02</option>
+            <option value="CR-03">CR-03</option>
+            <option value="CR-04">CR-04</option>
+            <option value="CR-05">CR-05</option>
+            <option value="CR-06">CR-06</option>
+        </select>
 
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const result = document.getElementById('result');
-    const selectAreaBtn = document.getElementById('select-area');
+        <label for="quantidade-etiqueta">Quantidade da Etiqueta:</label>
+        <input type="number" id="quantidade-etiqueta" name="quantidade-etiqueta" min="0" required>
 
-    let isSelecting = false;
-    let rect = {};
+        <label for="quantidade-maquina">Quantidade da Máquina:</label>
+        <input type="number" id="quantidade-maquina" name="quantidade-maquina" min="0" required>
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => {
-        video.srcObject = stream;
-        video.addEventListener('loadedmetadata', () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          drawVideoToCanvas();
-        });
-      })
-      .catch(err => console.error("Error accessing camera: ", err));
+        <label for="percentual-acerto">Percentual de Acerto:</label>
+        <input type="text" id="percentual-acerto" name="percentual-acerto" readonly>
 
-    function drawVideoToCanvas() {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      if (Object.keys(rect).length) {
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-        analyzeContrast();
-      }
-      requestAnimationFrame(drawVideoToCanvas);
-    }
+        <button type="submit">Salvar</button>
+    </form>
 
-    function analyzeContrast() {
-      const imageData = ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
-      const data = imageData.data;
-      let highContrastPixels = 0;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const brightness = (r + g + b) / 3;
-        if (brightness < 50 || brightness > 200) {
-          highContrastPixels++;
-        }
-      }
-
-      const totalPixels = rect.width * rect.height;
-      const contrastPercentage = ((highContrastPixels / totalPixels) * 100).toFixed(2);
-      result.textContent = `High contrast area: ${contrastPercentage}%`;
-    }
-
-    canvas.addEventListener('mousedown', (e) => {
-      if (!isSelecting) return;
-
-      const rectStartX = e.offsetX;
-      const rectStartY = e.offsetY;
-
-      function mouseMoveHandler(event) {
-        rect.width = event.offsetX - rectStartX;
-        rect.height = event.offsetY - rectStartY;
-        rect.x = rectStartX;
-        rect.y = rectStartY;
-      }
-
-      function mouseUpHandler() {
-        canvas.removeEventListener('mousemove', mouseMoveHandler);
-        canvas.removeEventListener('mouseup', mouseUpHandler);
-        isSelecting = false;
-      }
-
-      canvas.addEventListener('mousemove', mouseMoveHandler);
-      canvas.addEventListener('mouseup', mouseUpHandler);
-    });
-
-    selectAreaBtn.addEventListener('click', () => {
-      isSelecting = true;
-      rect = {}; // Reset the rectangle
-      result.textContent = '';
-    });
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
