@@ -3,154 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <link rel="manifest" href="manifest.json">
-  <title>Motion Detector</title>
+  <title>Contrast Filter App</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
       margin: 0;
+      font-family: Arial, sans-serif;
     }
-    video {
-      display: block;
-      width: 100%;
-      max-width: 500px;
+
+    video, canvas {
+      margin-top: 10px;
+      max-width: 100%;
     }
-    table {
+
+    .controls {
       margin-top: 20px;
-      border-collapse: collapse;
-      width: 80%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #f4f4f4;
     }
   </style>
 </head>
 <body>
-  <h1>Motion Detector</h1>
-  <video id="video" autoplay></video>
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Tempo de Movimento</th>
-      </tr>
-    </thead>
-    <tbody id="logTable"></tbody>
-  </table>
+  <h1>Contrast Filter Application</h1>
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <div class="controls">
+    <button id="select-area">Select Area</button>
+    <p id="result"></p>
+  </div>
 
   <script>
-    let motionDetected = false;
-    let motionStartTime = null;
-    let lastMotionEndTime = null;
-    let totalMotionTime = 0;
-    let hourlyMotionTime = 0;
-    const NO_MOTION_THRESHOLD = 20000; // 20 seconds in milliseconds
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const result = document.getElementById('result');
+    const selectAreaBtn = document.getElementById('select-area');
 
-    // Initialize the camera
-    async function initializeCamera() {
-      const video = document.getElementById('video');
+    let isSelecting = false;
+    let rect = {};
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => {
         video.srcObject = stream;
-        startMotionDetection();
-        sendNotification('A aplicação foi iniciada.', 'Acompanhe os movimentos registrados.');
-      } catch (error) {
-        console.error('Erro ao acessar a câmera:', error);
-      }
-    }
-
-    // Detect motion
-    function startMotionDetection() {
-      const video = document.getElementById('video');
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-
-      setInterval(() => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = frame.data;
-        let motionPixels = 0;
-
-        for (let i = 0; i < pixels.length; i += 4) {
-          const r = pixels[i];
-          const g = pixels[i + 1];
-          const b = pixels[i + 2];
-
-          const brightness = (r + g + b) / 3;
-          if (brightness > 240) motionPixels++;
-        }
-
-        if (motionPixels > 10000) { // Threshold for detecting motion
-          if (!motionDetected) {
-            motionDetected = true;
-            if (!lastMotionEndTime || new Date() - lastMotionEndTime > NO_MOTION_THRESHOLD) {
-              motionStartTime = new Date();
-            }
-          }
-        } else {
-          if (motionDetected) {
-            motionDetected = false;
-            const motionEndTime = new Date();
-
-            if (motionEndTime - motionStartTime > NO_MOTION_THRESHOLD) {
-              const duration = (motionEndTime - motionStartTime) / 1000; // In seconds
-
-              totalMotionTime += duration;
-              hourlyMotionTime += duration;
-              logMotion(motionStartTime, duration);
-              lastMotionEndTime = motionEndTime;
-            }
-          }
-        }
-      }, 500);
-
-      setInterval(() => {
-        if (hourlyMotionTime < 1980) { // 55% of an hour (60 minutes = 3600 seconds)
-          sendNotification('Eficiência baixa', 'Houve pouca atividade na última hora.');
-        }
-        hourlyMotionTime = 0; // Reset hourly counter
-      }, 3600000); // Every hour
-    }
-
-    // Log motion data in the table
-    function logMotion(startTime, duration) {
-      const table = document.getElementById('logTable');
-      const row = table.insertRow();
-
-      const dateCell = row.insertCell(0);
-      dateCell.textContent = startTime.toLocaleString();
-
-      const durationCell = row.insertCell(1);
-      durationCell.textContent = `${duration.toFixed(2)} segundos`;
-    }
-
-    // Push Notifications
-    function sendNotification(title, body) {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        navigator.serviceWorker.register('service-worker.js').then(registration => {
-          registration.showNotification(title, { body });
+        video.addEventListener('loadedmetadata', () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          drawVideoToCanvas();
         });
-      } else {
-        console.warn('Notificações push não são suportadas neste dispositivo.');
+      })
+      .catch(err => console.error("Error accessing camera: ", err));
+
+    function drawVideoToCanvas() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (Object.keys(rect).length) {
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        analyzeContrast();
       }
+      requestAnimationFrame(drawVideoToCanvas);
     }
 
-    initializeCamera();
+    function analyzeContrast() {
+      const imageData = ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
+      const data = imageData.data;
+      let highContrastPixels = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const brightness = (r + g + b) / 3;
+        if (brightness < 50 || brightness > 200) {
+          highContrastPixels++;
+        }
+      }
+
+      const totalPixels = rect.width * rect.height;
+      const contrastPercentage = ((highContrastPixels / totalPixels) * 100).toFixed(2);
+      result.textContent = `High contrast area: ${contrastPercentage}%`;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (!isSelecting) return;
+
+      const rectStartX = e.offsetX;
+      const rectStartY = e.offsetY;
+
+      function mouseMoveHandler(event) {
+        rect.width = event.offsetX - rectStartX;
+        rect.height = event.offsetY - rectStartY;
+        rect.x = rectStartX;
+        rect.y = rectStartY;
+      }
+
+      function mouseUpHandler() {
+        canvas.removeEventListener('mousemove', mouseMoveHandler);
+        canvas.removeEventListener('mouseup', mouseUpHandler);
+        isSelecting = false;
+      }
+
+      canvas.addEventListener('mousemove', mouseMoveHandler);
+      canvas.addEventListener('mouseup', mouseUpHandler);
+    });
+
+    selectAreaBtn.addEventListener('click', () => {
+      isSelecting = true;
+      rect = {}; // Reset the rectangle
+      result.textContent = '';
+    });
   </script>
 </body>
 </html>
