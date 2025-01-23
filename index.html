@@ -1,127 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Entry App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        label {
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-        input, select, button {
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indicador Carimbadeira</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Data Entry Form</h1>
-        <form id="dataForm">
-            <label for="op">OP:</label>
-            <input type="number" id="op" name="op" required>
+  <h1>Indicador Carimbadeira</h1>
 
-            <label for="carimbadeira">Carimbadeira:</label>
-            <select id="carimbadeira" name="carimbadeira" required>
-                <option value="CR-01">CR-01</option>
-                <option value="CR-02">CR-02</option>
-                <option value="CR-03">CR-03</option>
-                <option value="CR-04">CR-04</option>
-                <option value="CR-05">CR-05</option>
-                <option value="CR-06">CR-06</option>
-            </select>
+  <!-- Formulário -->
+  <form id="form">
+    <input type="text" id="op" placeholder="Operação" required />
+    <input type="text" id="carimbadeira" placeholder="Carimbadeira" required />
+    <input type="number" id="quantidade_etiqueta" placeholder="Quantidade Etiqueta" required />
+    <input type="number" id="quantidade_maquina" placeholder="Quantidade Máquina" required />
+    <input type="number" id="percentual_erro" step="0.01" placeholder="Percentual Erro" required />
+    <button type="submit">Salvar</button>
+  </form>
 
-            <label for="etiqueta">Quantidade da Etiqueta:</label>
-            <input type="number" id="etiqueta" name="etiqueta" required>
+  <!-- Tabela para exibir os dados -->
+  <h2>Dados Salvos</h2>
+  <table id="dados-table" border="1">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Operação</th>
+        <th>Carimbadeira</th>
+        <th>Qtd. Etiqueta</th>
+        <th>Qtd. Máquina</th>
+        <th>% Erro</th>
+        <th>Data Criação</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-            <label for="maquina">Quantidade da Máquina:</label>
-            <input type="number" id="maquina" name="maquina" required>
-
-            <label for="percentual">Percentual de Acerto:</label>
-            <input type="text" id="percentual" name="percentual" readonly>
-
-            <button type="submit">Salvar</button>
-        </form>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://vfivrbyobztxbjhvfatb.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        document.getElementById('dataForm').addEventListener('input', function() {
-            const etiqueta = parseFloat(document.getElementById('etiqueta').value) || 0;
-            const maquina = parseFloat(document.getElementById('maquina').value) || 0;
-            const percentual = maquina - etiqueta;
-            document.getElementById('percentual').value = percentual;
-        });
-
-        document.getElementById('dataForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const data = {
-                op: document.getElementById('op').value,
-                carimbadeira: document.getElementById('carimbadeira').value,
-                etiqueta: parseInt(document.getElementById('etiqueta').value),
-                maquina: parseInt(document.getElementById('maquina').value),
-                percentual: document.getElementById('percentual').value,
-                date: new Date().toISOString()
-            };
-
-            try {
-                const { error } = await supabase.from('data_entries').insert([data]);
-                if (error) throw error;
-
-                alert('Dados salvos com sucesso!');
-                document.getElementById('dataForm').reset();
-                document.getElementById('percentual').value = '';
-            } catch (error) {
-                console.error('Erro ao salvar os dados:', error);
-                alert('Erro ao salvar os dados. Tente novamente.');
-            }
-        });
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
