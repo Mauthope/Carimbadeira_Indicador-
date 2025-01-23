@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Indicador Carimbadeira</title>
+  <title>Indicador Etiquetas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -40,7 +40,7 @@
   </style>
 </head>
 <body>
-  <h1>Indicador Carimbadeira</h1>
+  <h1>Indicador Etiquetas</h1>
 
   <!-- Formulário -->
   <form id="form">
@@ -81,7 +81,7 @@
     // Função para carregar os dados da tabela
     async function carregarDados() {
       const { data, error } = await supabase
-        .from('Indicador_Carimbadeira')
+        .from('etiquetas')
         .select('*');
 
       if (error) {
@@ -118,7 +118,7 @@
       const percentual_erro = parseFloat(document.querySelector('#percentual_erro').value);
 
       const { data, error } = await supabase
-        .from('Indicador_Carimbadeira')
+        .from('etiquetas')
         .insert([
           {
             op,
