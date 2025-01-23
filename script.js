@@ -3,6 +3,7 @@ const supabaseUrl = 'https://vfivrbyobztxbjhvfatb.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaXZyYnlvYnp0eGJqaHZmYXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzA5ODAsImV4cCI6MjA1MzE0Njk4MH0.mMgj-aTDwEMKTIKS9DwgPrTEA8IaDfSKfSiTkegXcfk';
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+
 // Função para carregar os dados da tabela
 async function carregarDados() {
   const { data, error } = await supabase
